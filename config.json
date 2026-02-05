@@ -1,0 +1,41 @@
+{
+  "app-prefix": "v1",
+  "app-name": "cts",
+  "app-suffix": "",
+  "app-folder": "/usr/share/nginx/html",
+
+  "app-domain-name": "mnserviceproviders.com",
+  "docker-image-tag-version": "1.0.0",
+  
+  "base-docker-image-to-use": "docker.mnserviceproviders.com/sample-app-nginx-1.27.4:1.0.0",
+  "remote-build-folder": "0006-mnserviceproviders.com",
+
+  "container-app-port":"80",
+  "container-ssh-port":"22",
+  "container-ftp-port":"21",
+  "container-pasv-min-port":"21301",
+
+  "local-port": 40001,
+  "local-ssh-port": 42000,
+  "local-ftp-port": 41000,
+  "local-no-of-port": "5",
+  "local-pasv-min-port": 21331,
+
+  "dev-port": "40005",
+  "dev-ssh-port": "42000",
+  "dev-ftp-port": "41000",
+  "dev-no-of-port": "5",
+  "dev-pasv-min-port": "21311",
+
+  "uat-port": "40006",
+  "uat-ssh-port": "42000",
+  "uat-ftp-port": "41000",
+  "uat-no-of-port": "10",
+  "uat-pasv-min-port": "21321",
+
+  "prod-port": "40007",
+  "prod-ssh-port": "42000",
+  "prod-ftp-port": "41000",
+  "prod-no-of-port": "50",
+  "prod-pasv-min-port": "21331"
+}

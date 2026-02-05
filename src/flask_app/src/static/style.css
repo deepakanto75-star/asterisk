@@ -1,0 +1,157 @@
+/* /static/style.css */
+
+/* --- GLOBAL STYLES & VARIABLES --- */
+:root {
+  --oz-blue: #007bff;
+  --oz-light-blue: #e7f3ff;
+  --oz-green: #28a745;
+  --oz-red: #dc3545;
+  --oz-light-gray: #f8f9fa;
+  --oz-border-color: #dee2e6;
+  --oz-text-light: #6c757d;
+}
+
+body {
+  background-color: #f4f7fc;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* --- HEADER --- */
+.main-header {
+  background-color: white;
+  border-bottom: 1px solid var(--oz-border-color);
+  padding: 0.75rem 1.5rem;
+}
+
+/* New style for the header title */
+.header-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.header-actions .btn {
+  color: var(--oz-text-light);
+  font-size: 1.2rem;
+}
+
+/* Updated style for the logout button to be a flexible pill */
+#logout {
+    background-color: #6f42c1;
+    color: white;
+    border-radius: 20px; /* Pill shape */
+    min-width: 40px;
+    height: 40px;
+    padding: 0 15px; /* Horizontal padding for text */
+    font-weight: bold;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+}
+#logout:hover {
+    background-color: #59369a;
+}
+
+/* --- MAIN LAYOUT --- */
+.sidebar {
+  background-color: white;
+  height: calc(100vh - 70px); /* Full height minus header */
+  padding-top: 1rem;
+  border-right: 1px solid var(--oz-border-color);
+}
+
+.sidebar-nav .nav-link {
+  color: var(--oz-text-light);
+  font-size: 0.9rem;
+  padding: 0.8rem 1rem;
+  margin: 0.5rem 0;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+}
+
+.sidebar-nav .nav-link.active,
+.sidebar-nav .nav-link:hover {
+  background-color: var(--oz-light-blue);
+  color: var(--oz-blue);
+}
+
+.sidebar-nav .nav-link i {
+  font-size: 1.5rem;
+  margin-bottom: 5px;
+}
+
+/* --- DIALER CARD --- */
+.dialer-card {
+  border: 1px solid var(--oz-border-color);
+  border-radius: 0.75rem;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.dialer-card .nav-tabs .nav-link {
+  color: var(--oz-text-light);
+  font-weight: 500;
+}
+
+.dialer-card .nav-tabs .nav-link.active {
+  color: var(--oz-blue);
+  border-color: #dee2e6 #dee2e6 #fff;
+}
+
+/* --- MAIN CONTENT (ACTIVE CALLS) --- */
+.main-content {
+  padding: 1.5rem;
+}
+
+.session-card-redesigned {
+  background-color: white;
+  border: 1px solid var(--oz-border-color);
+  border-radius: 0.75rem;
+  padding: 1rem 1.5rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+
+.session-card-redesigned .caller-icon {
+  font-size: 1.5rem;
+  color: var(--oz-blue);
+}
+
+.session-card-redesigned .caller-name {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.session-card-redesigned .status-text {
+  color: var(--oz-text-light);
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+.session-card-redesigned .status-on-hold {
+  background-color: #ffc107;
+  color: white;
+  padding: 0.2rem 0.6rem;
+  border-radius: 0.25rem;
+  font-size: 0.9rem;
+  font-family: inherit;
+}
+
+.session-card-redesigned .control-bar,
+.session-card-redesigned .incoming-controls {
+    gap: 0.5rem;
+}
+
+.session-card-redesigned .btn-circle {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    font-size: 1.1rem;
+}
+
+/* Keypad and Toast styles are unchanged */
+.overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:1000}#keypad-modal{position:relative;background:#fff;padding:25px;border-radius:20px;box-shadow:0 5px 20px rgba(0,0,0,.15);width:300px;text-align:center;display:flex;flex-direction:column;gap:20px}#keypad-title{margin:0;font-weight:500;color:#333}.display-container{position:relative;display:flex;align-items:center;border:2px solid #ddd;border-radius:8px}#keypad-display{width:100%;padding:15px 45px 15px 15px;font-size:28px;font-weight:500;color:#333;border:none;background-color:transparent;outline:none;box-sizing:border-box;text-align:right}#keypad-delete-btn{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:22px;color:#ccc;cursor:pointer;padding:5px;transition:color .2s;display:none}#keypad-delete-btn:hover{color:#ff4c4c}#keypad-keys-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}#keypad-keys-grid .key{padding:18px;font-size:22px;border:none;background:#f0f0f0;border-radius:12px;cursor:pointer;transition:all .2s;margin:0;display:flex;align-items:center;justify-content:center}#keypad-keys-grid .key:hover{background:#e0e0e0}#keypad-actions{display:flex;justify-content:center;margin-top:5px}#keypad-confirm-btn{background-color:#2ecc71;color:#fff;width:75px;height:75px;font-size:28px;border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 10px rgba(46,204,113,.4);transition:all .2s ease}#keypad-confirm-btn:hover{background-color:#27ae60;transform:scale(1.05)}#keypad-close-btn{position:absolute;top:10px;right:15px;background:none;border:none;font-size:28px;color:#b0b0b0;cursor:pointer;line-height:1}#keypad-close-btn:hover{color:#333}#toast-container{position:fixed;top:20px;right:20px;z-index:2000;display:flex;flex-direction:column;gap:10px}.toast{padding:15px 20px;border-radius:.25rem;background-color:#333;color:#fff;box-shadow:0 4px 10px rgba(0,0,0,.2);opacity:0;transform:translateY(-100%);transition:all .4s ease}.toast.show{opacity:1;transform:translateY(0)}.toast.success{background-color:var(--oz-green)}.toast.error{background-color:#d35400}

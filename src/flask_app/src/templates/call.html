@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>WebRTC Agent Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="{{ url_for('static', filename='js/config.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/sip-0.7.8.js') }}"></script>
+</head>
+<body>
+
+  <!-- Login View (Unchanged) -->
+  <div id="login-view" class="d-flex align-items-center justify-content-center vh-100">
+    <div class="text-center">
+      <h1>WebRTC SIP Client</h1>
+      <p class="text-muted">Please log in to continue</p>
+      <div class="card p-4" style="width: 350px;">
+        <input type="text" id="extension" class="form-control mb-2" placeholder="Enter Extension">
+        <input type="password" id="password" class="form-control mb-3" placeholder="Enter Password">
+        <button id="login" class="btn btn-primary w-100">Login</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Call View -->
+  <div id="call-view" class="d-none">
+    <header class="main-header d-flex justify-content-between align-items-center">
+      <div class="header-title">WebRTC Agent Dashboard</div>
+      <div class="d-flex align-items-center gap-3">
+        <div class="header-actions d-flex gap-2">
+            <button class="btn" onclick="window.location.reload()" title="Reload"><i class="fa-solid fa-arrows-rotate"></i></button>
+            <button class="btn" title="Notifications"><i class="fa-solid fa-bell"></i></button>
+            <button id="logout" title="Logout">Logout</button>
+        </div>
+      </div>
+    </header>
+    <div class="d-flex">
+      <div class="sidebar p-2" style="width: 100px;">
+        <ul class="nav flex-column sidebar-nav">
+          <li class="nav-item"><a id="history-link" class="nav-link" href="#" title="History"><i class="fa-solid fa-clock-rotate-left"></i> History</a></li>
+          <li class="nav-item"><a id="hub-link" class="nav-link active" href="#" title="Interaction Hub"><i class="fa-solid fa-comments"></i> Hub</a></li>
+        </ul>
+      </div>
+      <div class="flex-grow-1 p-3">
+        <div id="main-content-view">
+          <div class="row">
+            <div class="col-md-5 col-lg-4">
+              <div class="card dialer-card">
+                <div class="card-header bg-white"><ul class="nav nav-tabs card-header-tabs"><li class="nav-item"><a class="nav-link active" aria-current="true" href="#"><i class="fa-solid fa-grip"></i> Manual</a></li></ul></div>
+                <div class="card-body p-4">
+                  <div class="mb-3"><label for="bound-type" class="form-label">Bound *</label><select class="form-select" id="bound-type"><option selected disabled>Please choose a Bound</option><option value="inbound">Inbound</option><option value="outbound">Outbound</option></select></div>
+                  <div class="mb-3"><label for="destination" class="form-label">Number *</label><input type="text" id="destination" class="form-control" placeholder="Please choose or Dial Phone Number"></div>
+                  <button id="call" class="btn btn-primary w-100 mt-3"><i class="fa-solid fa-phone me-2"></i> Call</button>
+                </div>
+              </div>
+              <div id="attended-transfer-section" class="card dialer-card mt-4 d-none">
+                <div class="card-body p-4">
+                  <h5 class="card-title mb-3">Attended Transfer</h5>
+                  <label for="transfer-destination-input" class="form-label">Transfer to *</label>
+                  <input type="text" id="transfer-destination-input" class="form-control" placeholder="Enter transfer number">
+                  <div class="mt-3 d-flex gap-2">
+                      <button id="confirm-transfer-btn" class="btn btn-success flex-grow-1">Confirm</button>
+                      <button id="cancel-transfer-btn" class="btn btn-secondary flex-grow-1">Cancel</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-7 col-lg-8">
+              <div class="d-flex justify-content-between align-items-center mb-3"><h5 class="mb-0">Active Sessions</h5><button id="merge" class="btn btn-warning btn-sm" style="display: none;"><i class="fa-solid fa-people-arrows me-2"></i> Merge Calls</button></div>
+              <div id="session-container"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Call History View -->
+        <div id="call-history-view" class="d-none">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">Recent Call History</h5>
+            <button id="refresh-history-btn" class="btn btn-sm btn-outline-secondary">
+              <i class="fa-solid fa-arrows-rotate me-1"></i> Refresh
+            </button>
+          </div>
+          <div class="card">
+            <div class="table-responsive">
+              <table class="table table-striped table-hover mb-0" id="call-log-table">
+                <thead>
+                  <tr>
+                    <th>Call Start</th>
+                    <th>Caller ID</th>
+                    <th>Destination</th>
+                    <th>Duration (s)</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="call-log-body">
+                  <!-- Call records will be inserted here by JavaScript -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Keypad, Toast, and Template sections (Unchanged) -->
+  <div id="keypad-overlay" class="overlay">
+      <div id="keypad-modal">
+          <button id="keypad-close-btn" title="Close">×</button>
+          <h2 id="keypad-title">Keypad</h2>
+          <div class="display-container"><input type="text" id="keypad-display" readonly /><button id="keypad-delete-btn" title="Backspace"><i class="fa-solid fa-delete-left"></i></button></div>
+          <div id="keypad-keys-grid"><button class="key" data-digit="1">1</button><button class="key" data-digit="2">2</button><button class="key" data-digit="3">3</button><button class="key" data-digit="4">4</button><button class="key" data-digit="5">5</button><button class="key" data-digit="6">6</button><button class="key" data-digit="7">7</button><button class="key" data-digit="8">8</button><button class="key" data-digit="9">9</button><button class="key" data-digit="*">*</button><button class="key" data-digit="0">0</button><button class="key" data-digit="#">#</button></div>
+          <div id="keypad-actions"><button id="keypad-confirm-btn" title="Confirm"><i class="fa-solid fa-check"></i></button></div>
+      </div>
+  </div>
+  <div id="toast-container"></div>
+  <template id="session-template">
+      <div class="session-card-redesigned w-100">
+          <div class="d-flex align-items-center"><div class="caller-icon me-3"><i class="fa-solid fa-user-headset"></i></div><div class="flex-grow-1"><div class="caller-name name">Initializing...</div><div class="status-text mt-1">Idle</div></div><div class="ms-3 d-flex justify-content-center">
+            <div class="control-bar" style="display: none;">
+                <button class="mute-btn btn btn-light btn-circle" title="Mute"><i class="fa-solid fa-microphone"></i></button>
+                <button class="keypad-btn btn btn-light btn-circle" title="Keypad"><i class="fa-solid fa-grip"></i></button>
+                <button class="hold-btn btn btn-light btn-circle" title="Hold"><i class="fa-solid fa-pause"></i></button>
+                <button class="transfer-btn btn btn-light btn-circle" title="Transfer"><i class="fa-solid fa-phone-flip"></i></button>
+                <button class="end-call-btn btn btn-danger btn-circle" title="End Call"><i class="fa-solid fa-phone-slash"></i></button>
+            </div>
+            <div class="incoming-controls" style="display: none;">
+                <button class="decline-btn btn btn-danger btn-circle" title="Decline"><i class="fa-solid fa-phone-slash"></i></button>
+                <button class="answer-btn btn btn-success btn-circle" title="Answer"><i class="fa-solid fa-phone"></i></button>
+            </div>
+            <div class="standalone-end-call-container" style="display: none;">
+                <button class="end-call-btn btn btn-danger btn-circle" title="Cancel Call"><i class="fa-solid fa-phone-slash"></i></button>
+            </div>
+          </div></div>
+          <div class="conference-indicator text-warning fw-bold mt-2" style="display: none;"><i class="fa-solid fa-users"></i> Conference</div>
+      </div>
+  </template>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+window.addEventListener("DOMContentLoaded", () => {
+    // DOM Selectors
+    const loginView = document.getElementById("login-view");
+    const callView = document.getElementById("call-view");
+    const extensionInput = document.getElementById("extension");
+    const passwordInput = document.getElementById("password");
+    const loginBtn = document.getElementById("login");
+    const logoutBtn = document.getElementById("logout");
+    const callBtn = document.getElementById("call");
+    const mergeBtn = document.getElementById("merge");
+    const destinationInput = document.getElementById("destination");
+    const sessionContainer = document.getElementById("session-container");
+    const sessionTemplate = document.getElementById("session-template");
+    const keypadOverlay = document.getElementById("keypad-overlay");
+    const keypadKeysGrid = document.getElementById("keypad-keys-grid");
+    const attendedTransferSection = document.getElementById("attended-transfer-section");
+    const transferDestinationInput = document.getElementById("transfer-destination-input");
+    const confirmTransferBtn = document.getElementById("confirm-transfer-btn");
+    const cancelTransferBtn = document.getElementById("cancel-transfer-btn");
+    const mainContentView = document.getElementById('main-content-view');
+    const callHistoryView = document.getElementById('call-history-view');
+    const historyLink = document.getElementById('history-link');
+    const hubLink = document.getElementById('hub-link');
+    const refreshHistoryBtn = document.getElementById('refresh-history-btn');
+    const callLogBody = document.getElementById('call-log-body');
+
+    // Global State
+    const remoteAudio = new Audio();
+    remoteAudio.autoplay = true;
+    document.body.appendChild(remoteAudio);
+    let userAgent = null, sessions = [], activeKeypadSession = null;
+    let keypadMode = 'dtmf', activeTransferSession = null;
+    const MAX_SESSIONS = 2, CONFERENCE_ID = 'start-conference';
+    
+    // --- CALL HISTORY LOGIC (IMPROVED) ---
+
+    function fetchCallLogs() {
+        showToast("Fetching call history...");
+        fetch('/calls')
+            .then(response => response.ok ? response.json() : Promise.reject('Network response was not ok'))
+            .then(data => {
+                console.log('Successfully fetched call logs:', data);
+                populateCallLogTable(data);
+            })
+            .catch(error => {
+                console.error('Error fetching call logs:', error);
+                showToast("Error loading call logs.", "error");
+                callLogBody.innerHTML = '<tr><td colspan="6">Error loading call logs. Please try again.</td></tr>';
+            });
+    }
+
+    // IMPROVEMENT: This function is now updated for the new data and playback button.
+    function populateCallLogTable(callLogs) {
+        const tableBody = document.getElementById('call-log-body');
+        tableBody.innerHTML = '';
+
+        if (!callLogs || callLogs.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="6" class="text-center">No recent calls found.</td></tr>';
+            return;
+        }
+
+        callLogs.forEach(log => {
+            const row = document.createElement('tr');
+            
+            // Create a listen button only if a recording path exists
+            let listenButtonHtml = '';
+            if (log.recording_path) {
+                // MODIFIED: Removed the onclick attribute, relying solely on event delegation
+                listenButtonHtml = `
+                    <button class="btn btn-sm btn-outline-primary play-recording-btn" data-recording-path="${log.recording_path}">
+                        <i class="fa-solid fa-play me-1"></i> Listen
+                    </button>
+                `;
+            }
+
+            row.innerHTML = `
+                <td>${log.call_start || 'N/A'}</td>
+                <td>${log.caller_id}</td>
+                <td>${log.destination}</td>
+                <td>${log.duration}</td>
+                <td>${log.disposition || 'In Progress'}</td>
+                <td>${listenButtonHtml}</td>
+            `;
+            tableBody.appendChild(row);
+        });
+    }
+    
+    // NEW: Helper function to play recordings
+    function playRecording(filename) {
+        const recordingUrl = `/recordings/${filename}`;
+        console.log(`Playing recording from: ${recordingUrl}`);
+        const audio = new Audio(recordingUrl);
+        audio.play().catch(e => {
+            console.error("Error playing recording:", e);
+            showToast("Error playing audio.", "error");
+        });
+        showToast(`Playing recording...`, 'info');
+    }
+
+    // Event Listeners for view switching
+    historyLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        mainContentView.classList.add('d-none');
+        callHistoryView.classList.remove('d-none');
+        historyLink.classList.add('active');
+        hubLink.classList.remove('active');
+        fetchCallLogs();
+    });
+
+    hubLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        callHistoryView.classList.add('d-none');
+        mainContentView.classList.remove('d-none');
+        hubLink.classList.add('active');
+        historyLink.classList.remove('active');
+    });
+
+    refreshHistoryBtn.addEventListener('click', fetchCallLogs);
+
+    // --- NEW CODE START ---
+    // Event listener for playing recordings using delegation
+    callLogBody.addEventListener('click', (e) => {
+        const targetButton = e.target.closest('.play-recording-btn');
+        if (targetButton) {
+            const recordingPath = targetButton.dataset.recordingPath;
+            if (recordingPath) {
+                playRecording(recordingPath);
+            }
+        }
+    });
+    // --- NEW CODE END ---
+    
+    // --- EXISTING LOGIC ---
+    
+    function showToast(message, type = '') { /* Unchanged */
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        document.getElementById("toast-container").appendChild(toast);
+        toast.textContent = message;
+        setTimeout(() => { toast.classList.add('show'); }, 10);
+        setTimeout(() => {
+            toast.classList.remove('show');
+            toast.addEventListener('transitionend', () => toast.remove());
+        }, 4000);
+    }
+    
+    loginBtn.onclick = () => { /* Unchanged */
+        const extension = extensionInput.value.trim();
+        const password = passwordInput.value.trim();
+        if (!extension || !password) return alert("Please enter extension and password.");
+        if (!window.CONFIG || !CONFIG.WS_SERVER) return showToast("Config error: Check config.js", "error");
+        const configuration = { uri: `sip:${extension}@localhost`, wsServers: [CONFIG.WS_SERVER], authorizationUser: extension, password: password, register: true, traceSip: true, hackIpInContact: true, hackWssInTransport: true };
+        showToast(`Logging in as ${extension}...`);
+        userAgent = new SIP.UA(configuration);
+        userAgent.on("registered", () => { 
+            showToast(`Registered as ${extension}`, "success"); 
+            loginView.classList.add('d-none'); 
+            callView.classList.remove('d-none'); 
+            logoutBtn.textContent = extension;
+        });
+        userAgent.on("registrationFailed", (response, cause) => { showToast(`Login Failed: ${cause}`, "error"); if (userAgent) userAgent.stop(); userAgent = null; });
+        userAgent.on("unregistered", () => { showToast("Logged Out"); sessions.forEach(s => removeSession(s.id)); if (userAgent) userAgent.stop(); userAgent = null; callView.classList.add('d-none'); loginView.classList.remove('d-none'); logoutBtn.textContent = 'Logout';});
+        userAgent.on("invite", handleIncomingInvite);
+    };
+    logoutBtn.onclick = () => { if (window.confirm("Are you sure you want to log out?")) { if (userAgent) userAgent.unregister(); } };
+
+    // --- The rest of your minified and helper functions remain unchanged ---
+    function hideTransferSection() { attendedTransferSection.classList.add('d-none'); activeTransferSession = null; }
+    confirmTransferBtn.onclick = () => { const destination = transferDestinationInput.value.trim(); if (!destination) return alert("Please enter a number to transfer to."); if (!activeTransferSession) return alert("Error: No active call selected for transfer."); const ASTERISK_HOST = userAgent.configuration.uri.host; const target = `sip:${destination}@${ASTERISK_HOST}`; showToast(`Transferring call to ${destination}...`); activeTransferSession.session.refer(target); hideTransferSection(); };
+    cancelTransferBtn.onclick = hideTransferSection;
+    function createSessionUI(sessionId) {
+        const card = sessionTemplate.content.cloneNode(true).firstElementChild;
+        card.dataset.sessionId = sessionId;
+        sessionContainer.appendChild(card);
+        const ui = { card, name: card.querySelector(".name"), statusText: card.querySelector(".status-text"), conferenceIndicator: card.querySelector(".conference-indicator"), controlBar: card.querySelector(".control-bar"), incomingControls: card.querySelector(".incoming-controls"), answerBtn: card.querySelector(".answer-btn"), declineBtn: card.querySelector(".decline-btn"), muteBtn: card.querySelector(".mute-btn"), keypadBtn: card.querySelector(".keypad-btn"), holdBtn: card.querySelector(".hold-btn"), transferBtn: card.querySelector(".transfer-btn"), endCallBtns: card.querySelectorAll(".end-call-btn"), standaloneEndCallContainer: card.querySelector(".standalone-end-call-container") };
+        const getSession = () => sessions.find(s => s.id === sessionId);
+        ui.answerBtn.onclick = () => { const s = getSession(); if (s) s.session.accept({ media: { constraints: { audio: true, video: false } } }); };
+        ui.holdBtn.onclick = () => { const s = getSession(); if (s && !s.isInConference) s.session[s.isHeld ? "unhold" : "hold"](); };
+        const terminateCall = () => { const s = getSession(); if (s) s.session.terminate(); };
+        ui.declineBtn.onclick = terminateCall;
+        ui.endCallBtns.forEach(btn => btn.onclick = terminateCall);
+        ui.muteBtn.onclick = () => { const s = getSession(); if (s) s.session[s.isMuted ? "unmute" : "mute"](); };
+        ui.keypadBtn.onclick = () => { activeKeypadSession = getSession(); keypadMode = 'dtmf'; keypadOverlay.querySelector("#keypad-title").textContent = 'Keypad (DTMF Tones)'; keypadOverlay.querySelector("#keypad-actions").style.display = 'none'; keypadOverlay.style.display = "flex"; };
+        ui.transferBtn.onclick = () => { activeTransferSession = getSession(); attendedTransferSection.classList.remove('d-none'); showToast("Enter transfer number and click Confirm."); };
+        return ui;
+    }
+    function updateUI() {
+        const activeSession = sessions.find(s => s.status === "confirmed" && !s.isHeld);
+        const heldSession = sessions.find(s => s.status === "confirmed" && s.isHeld);
+        const canMerge = activeSession && heldSession;
+
+        sessions.forEach(s => {
+            const isIncoming = s.status === 'incoming';
+            const isConfirmed = s.status === 'confirmed';
+            const isNew = s.status === 'new';
+            
+            s.ui.incomingControls.style.display = isIncoming ? "flex" : "none";
+            s.ui.controlBar.style.display = isConfirmed ? "flex" : "none";
+            s.ui.conferenceIndicator.style.display = s.isInConference ? "block" : "none";
+            
+            if (s.ui.standaloneEndCallContainer) {
+                s.ui.standaloneEndCallContainer.style.display = (isNew && !isIncoming) ? "flex" : "none";
+            }
+            
+            if (isConfirmed) {
+                s.ui.holdBtn.classList.toggle("active", s.isHeld);
+                s.ui.holdBtn.querySelector("i").className = s.isHeld ? "fa-solid fa-play" : "fa-solid fa-pause";
+                s.ui.holdBtn.disabled = s.isInConference;
+                const muteIcon = s.ui.muteBtn.querySelector('i');
+                if (s.isMuted) {
+                    s.ui.muteBtn.classList.add('active');
+                    muteIcon.className = 'fa-solid fa-microphone-slash';
+                } else {
+                    s.ui.muteBtn.classList.remove('active');
+                    muteIcon.className = 'fa-solid fa-microphone';
+                }
+                s.ui.transferBtn.disabled = s.isHeld || s.isInConference;
+            }
+        });
+        
+        mergeBtn.style.display = canMerge ? "inline-block" : "none";
+        callBtn.disabled = sessions.length >= MAX_SESSIONS;
+    }
+    keypadOverlay.querySelector("#keypad-close-btn").onclick = () => { keypadOverlay.style.display = "none"; };
+    keypadKeysGrid.addEventListener('click', e => { if (e.target.matches('.key[data-digit]')) { const digit = e.target.dataset.digit; if (keypadMode === 'dtmf' && activeKeypadSession) { activeKeypadSession.session.dtmf(digit); showToast(`Sent DTMF: ${digit}`); } } });
+    keypadOverlay.querySelector("#keypad-delete-btn").style.display = 'none';
+    function handleIncomingInvite(e){if(sessions.length>=MAX_SESSIONS)return void e.reject({statusCode:486,reasonPhrase:"Busy Here"});addSession(e,"incoming");const t=e.remote_identity?.uri?.user||"unknown";t!==CONFERENCE_ID&&showToast("📞 Incoming call...")}callBtn.onclick=()=>{if(sessions.length>=MAX_SESSIONS)return alert("Maximum of 2 calls allowed.");const e=destinationInput.value.trim();if(!e)return alert("Please enter an extension to call.");const t=userAgent.configuration.uri.host,n=userAgent.invite(`sip:${e}@${t}`,{media:{constraints:{audio:!0,video:!1}}});addSession(n,"outgoing",e)};function addSession(e,t,n=null){const o=e.id,i={id:o,session:e,direction:t,isHeld:!1,isMuted:!1,isInConference:!1,status:"incoming"===t?"incoming":"new",timerInterval:null,startTime:null,ui:createSessionUI(o)};sessions.push(i);const s=e.remote_identity?.uri?.user;let a=s===CONFERENCE_ID?"Conference Call":"outgoing"===t?n||"Outgoing Call":s||"Incoming Call";i.ui.name.textContent=a,e.on("progress",()=>updateSessionStatus(o,"Ringing...")),e.on("accepted",function(){i.status="confirmed",setupMedia(this,!0),updateSessionStatus(o,"00:00"),startTimer(o),updateUI()}),e.on("hold",()=>{i.isHeld=!0,updateSessionStatus(o,"On Hold"),i.ui.statusText.classList.add("status-on-hold"),updateUI()}),e.on("unhold",()=>{i.isHeld=!1,setupMedia(e,!0),updateSessionStatus(o,"Active"),i.ui.statusText.classList.remove("status-on-hold"),updateUI()}),e.on("muted",()=>{i.isMuted=!0,updateUI()}),e.on("unmuted",()=>{i.isMuted=!1,updateUI()}),e.on("failed",(e,t)=>{showToast(`Call Failed: ${t}`,"error"),removeSession(o)}),e.on("terminated",()=>removeSession(o)),"incoming"===t&&!i.isInConference&&updateSessionStatus(o,`Incoming from ${a}`),updateUI()}
+    function removeSession(e){const t=sessions.findIndex(t=>t.id===e);if(t>-1){stopTimer(sessions[t]),sessionContainer.removeChild(sessions[t].ui.card),sessions.splice(t,1),0===sessions.length&&(remoteAudio.srcObject=null),hideTransferSection(),updateUI()}}
+    mergeBtn.onclick=()=>{const e=sessions.find(e=>"confirmed"===e.status&&!e.isHeld),t=sessions.find(e=>"confirmed"===e.status&&e.isHeld);if(!e||!t)return;const n=userAgent.configuration.uri.host,o=`sip:${CONFERENCE_ID}@${n}`,i=`${e.session.request.call_id};to-tag=${e.session.dialog.remote_tag};from-tag=${e.session.dialog.local_tag}`,s={extraHeaders:[`Replaces: ${i}`]};showToast("Merging calls..."),t.session.refer(o,s)};function startTimer(e){const t=sessions.find(t=>t.id===e);t&&!t.timerInterval&&(t.startTime=Date.now(),t.timerInterval=setInterval(()=>{const n=Math.floor((Date.now()-t.startTime)/1e3),o=String(Math.floor(n/60)).padStart(2,"0"),i=String(n%60).padStart(2,"0");updateSessionStatus(e,`${o}:${i}`)},1e3))}
+    function stopTimer(e){e&&e.timerInterval&&(clearInterval(e.timerInterval),e.timerInterval=null)}function setupMedia(e,t){try{const n=e.mediaHandler.peerConnection;if(!n)return;if(t){const o=new MediaStream;n.getReceivers().forEach(e=>{e.track?.kind==="audio"&&o.addTrack(e.track)}),remoteAudio.srcObject=o}}catch(e){console.error("⚠️ Error setting up media:",e)}}function updateSessionStatus(e,t){const n=sessions.find(t=>t.id===e);n&&(n.ui.statusText.textContent=t)}
+});
+</script>
+
+</body>
+</html>

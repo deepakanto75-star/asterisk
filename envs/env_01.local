@@ -1,0 +1,7 @@
+# Database Credentials
+
+DB_ROOT_PASSWORD="supersecretrootpassword"
+DB_NAME="asterisk_db"
+DB_USER="asterisk_user"
+DB_PASSWORD="asterisk_password"
+DB_HOST="localhost"

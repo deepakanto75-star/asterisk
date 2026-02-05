@@ -1,0 +1,21 @@
+# MySQL Credentials
+MYSQL_ROOT_PASSWORD=supersecretrootpassword
+DB_NAME=asterisk
+DB_USER=asteriskuser
+MYSQL_PASSWORD=supersecretuserpassword
+
+# Asterisk Manager Interface (AMI) Credentials
+AMI_USER=communicator
+AMI_PASS=amipassword
+ASTERISK_HOST=cts_freepbx
+AMI_PORT=5038
+
+# --- NEW: Credentials for Communicator to access DB ---
+# IMPORTANT: Use the IP of your cti_mysql container for DB_HOST_COMM
+DB_HOST_COMM=192.168.10.43
+DB_PORT_COMM=49110
+DB_USER_COMM=asteriskuser
+DB_PASS_COMM=supersecretuserpassword
+DB_NAME_COMM=asterisk
+
+
