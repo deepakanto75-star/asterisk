@@ -126,12 +126,28 @@ start_database() {
 start_asterisk() {
     echo "--> Starting the Asterisk container (${APP_NAME}-asterisk)..."
 
+    # Try to detect external IP (Public or LAN)
+    local EXTERNAL_IP=""
+
+    # Try getting public IP from a service with short timeout
+    if command -v curl >/dev/null 2>&1; then
+        EXTERNAL_IP=$(curl -s --max-time 2 https://api.ipify.org || true)
+    fi
+
+    # If failed, get local IP
+    if [ -z "$EXTERNAL_IP" ]; then
+        EXTERNAL_IP=$(hostname -I | awk '{print $1}')
+    fi
+
+    echo "Detected External/Local IP: $EXTERNAL_IP"
+
     docker stop "${APP_NAME}-asterisk" &>/dev/null || log "✅" "No existing  (${APP_NAME}-asterisk) container"
     docker rm   "${APP_NAME}-asterisk" &>/dev/null || true
 
     docker run -d \
         --name ${APP_NAME}-asterisk \
         --network ${DOCKER_NETWORK} \
+        -e ASTERISK_EXTERNAL_IP="$EXTERNAL_IP" \
         -p 5038:5038 \
         -p 5060:5060/udp \
         -p 5061:5061/tcp \
