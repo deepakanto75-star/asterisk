@@ -159,7 +159,8 @@ start_asterisk() {
         -v "$(pwd)/src/asterisk_conf/docker-entrypoint.sh:/docker-entrypoint.sh" \
         --entrypoint /docker-entrypoint.sh \
         --restart always \
-        ${APP_NAME}-asterisk
+        ${APP_NAME}-asterisk \
+        asterisk -f -cvvvvv
 
 
 }
