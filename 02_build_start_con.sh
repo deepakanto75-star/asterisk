@@ -180,6 +180,7 @@ start_flask_app() {
     -e DB_PASSWORD=${DB_PASSWORD} \
     -v "${PERSISTENCE_VOLUME}/flask_app_data:/app/data" \
     -v "${PERSISTENCE_VOLUME}/flask_app_logs:/app/logs" \
+    -v "${PERSISTENCE_VOLUME}/20250829/asterisk_recordings:/recordings:ro" \
     --restart always \
     ${APP_NAME}-frontend
 
