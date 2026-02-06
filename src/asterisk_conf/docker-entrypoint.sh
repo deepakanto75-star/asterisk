@@ -22,6 +22,15 @@ if [ -n "$ASTERISK_EXTERNAL_IP" ]; then
             # We use sed to append lines after the match.
             sed -i "/\[transport-wss\]/a external_media_address=$ASTERISK_EXTERNAL_IP\\nexternal_signaling_address=$ASTERISK_EXTERNAL_IP\\nlocal_net=127.0.0.1/32" "$CONF_FILE"
 
+            # --- Fix for SIP.js Rejecting Container Hostname in From Header ---
+            # SIP.js (and strict SIP parsers) reject "From: <sip:user@containerID>" if the container ID isn't a valid domain.
+            # We force the `from_domain` in the endpoint template to match the external IP.
+            if grep -q "\[webrtc-template\]" "$CONF_FILE"; then
+                sed -i '/from_domain/d' "$CONF_FILE"
+                sed -i "/\[webrtc-template\]/a from_domain=$ASTERISK_EXTERNAL_IP" "$CONF_FILE"
+                echo "Updated [webrtc-template] with from_domain=$ASTERISK_EXTERNAL_IP"
+            fi
+
             echo "Updated $CONF_FILE with external address configuration."
         else
             echo "Warning: [transport-wss] not found in $CONF_FILE"
