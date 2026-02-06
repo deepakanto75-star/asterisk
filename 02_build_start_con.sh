@@ -156,6 +156,8 @@ start_asterisk() {
         -p 10000-10020:10000-10020/udp \
         -v "$PERSISTENCE_VOLUME/20250829/asterisk_log:/var/log/asterisk" \
         -v "$PERSISTENCE_VOLUME/20250829/asterisk_recordings:/var/spool/asterisk/monitor" \
+        -v "$(pwd)/src/asterisk_conf/docker-entrypoint.sh:/docker-entrypoint.sh" \
+        --entrypoint /docker-entrypoint.sh \
         --restart always \
         ${APP_NAME}-asterisk
 
