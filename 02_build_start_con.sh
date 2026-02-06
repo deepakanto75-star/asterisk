@@ -154,9 +154,6 @@ start_asterisk() {
         -p 8088:8088 \
         -p 8089:8089 \
         -p 10000-10020:10000-10020/udp \
-        -v "$PERSISTENCE_VOLUME/20250829/asterisk_conf:/etc/asterisk" \
-        -v "$PERSISTENCE_VOLUME/20250829/asterisk_lib:/var/lib/asterisk" \
-        -v "$PERSISTENCE_VOLUME/20250829/asterisk_spool:/var/spool/asterisk" \
         -v "$PERSISTENCE_VOLUME/20250829/asterisk_log:/var/log/asterisk" \
         -v "$PERSISTENCE_VOLUME/20250829/asterisk_recordings:/var/spool/asterisk/monitor" \
         --restart always \
