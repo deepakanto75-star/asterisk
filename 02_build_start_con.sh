@@ -126,25 +126,41 @@ start_database() {
 start_asterisk() {
     echo "--> Starting the Asterisk container (${APP_NAME}-asterisk)..."
 
+    # Try to detect external IP (Public or LAN)
+    local EXTERNAL_IP=""
+
+    # Try getting public IP from a service with short timeout
+    if command -v curl >/dev/null 2>&1; then
+        EXTERNAL_IP=$(curl -s --max-time 2 https://api.ipify.org || true)
+    fi
+
+    # If failed, get local IP
+    if [ -z "$EXTERNAL_IP" ]; then
+        EXTERNAL_IP=$(hostname -I | awk '{print $1}')
+    fi
+
+    echo "Detected External/Local IP: $EXTERNAL_IP"
+
     docker stop "${APP_NAME}-asterisk" &>/dev/null || log "✅" "No existing  (${APP_NAME}-asterisk) container"
     docker rm   "${APP_NAME}-asterisk" &>/dev/null || true
 
     docker run -d \
         --name ${APP_NAME}-asterisk \
         --network ${DOCKER_NETWORK} \
+        -e ASTERISK_EXTERNAL_IP="$EXTERNAL_IP" \
         -p 5038:5038 \
         -p 5060:5060/udp \
         -p 5061:5061/tcp \
         -p 8088:8088 \
         -p 8089:8089 \
         -p 10000-10020:10000-10020/udp \
-        -v "$PERSISTENCE_VOLUME/20250829/asterisk_conf:/etc/asterisk" \
-        -v "$PERSISTENCE_VOLUME/20250829/asterisk_lib:/var/lib/asterisk" \
-        -v "$PERSISTENCE_VOLUME/20250829/asterisk_spool:/var/spool/asterisk" \
         -v "$PERSISTENCE_VOLUME/20250829/asterisk_log:/var/log/asterisk" \
         -v "$PERSISTENCE_VOLUME/20250829/asterisk_recordings:/var/spool/asterisk/monitor" \
+        -v "$(pwd)/src/asterisk_conf/docker-entrypoint.sh:/docker-entrypoint.sh" \
+        --entrypoint /docker-entrypoint.sh \
         --restart always \
-        ${APP_NAME}-asterisk
+        ${APP_NAME}-asterisk \
+        asterisk -f -cvvvvv
 
 
 }
@@ -167,6 +183,7 @@ start_flask_app() {
     -e DB_PASSWORD=${DB_PASSWORD} \
     -v "${PERSISTENCE_VOLUME}/flask_app_data:/app/data" \
     -v "${PERSISTENCE_VOLUME}/flask_app_logs:/app/logs" \
+    -v "${PERSISTENCE_VOLUME}/20250829/asterisk_recordings:/recordings:ro" \
     --restart always \
     ${APP_NAME}-frontend
 

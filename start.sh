@@ -96,6 +96,21 @@ start_database() {
 start_asterisk() {
     log "📞" "Starting the Asterisk container (${ASTERISK_CONTAINER_NAME})..."
 
+    # Try to detect external IP (Public or LAN)
+    local EXTERNAL_IP=""
+
+    # Try getting public IP from a service with short timeout
+    if command -v curl >/dev/null 2>&1; then
+        EXTERNAL_IP=$(curl -s --max-time 2 https://api.ipify.org || true)
+    fi
+
+    # If failed, get local IP
+    if [ -z "$EXTERNAL_IP" ]; then
+        EXTERNAL_IP=$(hostname -I | awk '{print $1}')
+    fi
+
+    log "ℹ️" "Detected External/Local IP: $EXTERNAL_IP"
+
     docker stop "${ASTERISK_CONTAINER_NAME}" &>/dev/null || log "ℹ️" "No existing container: ${ASTERISK_CONTAINER_NAME}"
     docker rm   "${ASTERISK_CONTAINER_NAME}" &>/dev/null || true
 
@@ -103,6 +118,7 @@ start_asterisk() {
         --name ${ASTERISK_CONTAINER_NAME} \
         --network ${NETWORK_NAME} \
         -v ${RECORDINGS_VOLUME_NAME}:/var/spool/asterisk/monitor \
+        -e ASTERISK_EXTERNAL_IP="$EXTERNAL_IP" \
         -p 5038:5038 \
         -p 5060:5060/udp \
         -p 8088:8088 \

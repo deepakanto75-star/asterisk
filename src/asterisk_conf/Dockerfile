@@ -196,4 +196,8 @@ EXPOSE 8088/tcp
 EXPOSE 8089/tcp
 EXPOSE 10000-10100/udp 
 
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
+ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["asterisk", "-f", "-cvvvvv"]
